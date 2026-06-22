@@ -1,0 +1,29 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Build Docker image
+      run: docker build -t user-service ./microservices/user-service
+
+    - name: Login to ECR
+      run: |
+        aws ecr get-login-password --region ap-south-1 |
+        docker login --username AWS --password-stdin ${{ secrets.ECR_URI }}
+
+    - name: Tag image
+      run: |
+        docker tag user-service:latest ${{ secrets.ECR_URI }}/user-service:latest
+
+    - name: Push image
+      run: |
+        docker push ${{ secrets.ECR_URI }}/user-service:latest
